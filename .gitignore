@@ -1,0 +1,9 @@
+# Log e backup reali — mai committare
+_backup.log
+*.log
+PDL_Backup/
+Backup/
+
+# Windows
+Thumbs.db
+desktop.ini
