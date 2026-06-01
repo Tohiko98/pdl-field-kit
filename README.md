@@ -1,131 +1,30 @@
-# pdl-backup
+# PDL Field Kit (Automation & System Diagnostics)
 
-> Backup rapido del profilo utente da un PC ospedaliero verso qualsiasi destinazione — share, PC tecnico, percorso UNC.
+Un framework modulare in PowerShell 5.1 progettato per ottimizzare i tempi di intervento on-field dei tecnici di supporto IT (PDL / Workstation Management) in contesti infrastrutturali complessi.
 
-[![PSScriptAnalyzer](https://github.com/Tohiko98/pdl-backup/actions/workflows/lint.yml/badge.svg)](https://github.com/Tohiko98/pdl-backup/actions/workflows/lint.yml)
-![PowerShell 5.1](https://img.shields.io/badge/PowerShell-5.1-blue)
-![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
-![License](https://img.shields.io/badge/License-MIT-green)
+## 🚀 I Moduli del Kit
 
----
+Il repository include tre strumenti core indipendenti per azzerare i tempi di downtime nei reparti:
 
-## Cosa fa
+### 1. 🔍 Diagnostica Postazione (`Test-PDL.ps1` / `Avvia-Diagnostica.bat`)
+* Raccolta istantanea dei parametri di rete critici (IP, Subnet, Gateway, DNS, DHCP).
+* Check di raggiungibilità dei Domain Controller e instradamento di rete.
+* Esportazione del report per gli allegati di ticketing.
 
-Un solo script. Fa una cosa sola: copia le cartelle essenziali del profilo utente da un PC remoto verso una destinazione a scelta, con log allegabile al ticket SysAid.
+### 2. 💾 Gestione Backup Profilo (`Invoke-PDLBackup.ps1` / `Avvia-Backup.bat`)
+* **Modalità Quick/Full**: Migrazione mirata dei dati utente (Desktop, Documenti, AppData, Sticky Notes, Browser).
+* **Resilienza**: Integrazione nativa con *Robocopy /z* per gestire reti instabili o WiFi di reparto senza corruzione dei dati.
+* **Compliance GDPR**: Richiesta di conferma esplicita per la tutela dei dati sensibili/paziente.
 
-Funziona in qualsiasi scenario:
-- Pre-migrazione (prima di sostituire il PC)
-- PC con problemi hardware imminenti
-- Backup al volo in reparto
+### 3. 🖨️ Automazione Stampanti (`PDLPrinter.ps1`)
+* Creazione dinamica di porte Standard TCP/IP e censimento immediato delle code di stampa tramite interfaccia CIM.
+* **Driver Management**: Logica di installazione del driver specifico di reparto con sistema di fallback automatico sul driver generico di Windows per garantire l'operatività di stampa in ogni scenario.
 
-> Testato su Windows 10, PowerShell 5.1, dominio AD — ULSS Treviso (Ca' Foncello)
+## 🛠️ Requisiti & Utilizzo
 
----
+* **OS**: Windows 10 / Windows 11
+* **Shell**: PowerShell 5.1+ (Eseguito con privilegi di Amministratore)
 
-## Requisiti
-
-- PowerShell 5.1
-- Privilegi **Administrator**
-- Share `C$` attiva sul PC remoto (default in dominio AD)
-
----
-
-## Utilizzo
-
-### Modalita interattiva (nessun parametro — ti chiede tutto)
-
+I file `.bat` inclusi permettono il lancio rapido con bypass automatico della Execution Policy:
 ```powershell
-.\Invoke-PDLBackup.ps1
-```
-
-### Con parametri
-
-```powershell
-# Backup completo su share ospedaliera
-.\Invoke-PDLBackup.ps1 -SourcePC HOSP-CHIR-PC04 -Username m.rossi -Destination "\\SERVER\Backup\PDL" -TicketID 10542
-
-# Backup rapido — solo Desktop + Documenti
-.\Invoke-PDLBackup.ps1 -SourcePC HOSP-CHIR-PC04 -Username m.rossi -Destination "C:\PDL_Backup" -Quick
-
-# Verso il PC del tecnico via rete
-.\Invoke-PDLBackup.ps1 -SourcePC HOSP-CHIR-PC04 -Username m.rossi -Destination "\\HOSP-TECH-PC01\C$\Backup"
-```
-
----
-
-## Parametri
-
-| Parametro | Tipo | Default | Descrizione |
-|---|---|---|---|
-| `-SourcePC` | String | _(interattivo)_ | Hostname PC sorgente |
-| `-Username` | String | _(interattivo)_ | Account AD utente |
-| `-Destination` | String | _(interattivo)_ | Percorso destinazione (locale o UNC) |
-| `-TicketID` | String | _(opzionale)_ | Numero ticket SysAid |
-| `-Quick` | Switch | — | Solo Desktop + Documenti |
-
----
-
-## Cosa viene copiato
-
-**Modalita FULL:**
-- Desktop, Documents, Favorites, Pictures
-- AppData\Roaming\Office, Sticky Notes, Firefox, Start Menu
-
-**Modalita QUICK (`-Quick`):**
-- Desktop, Documents
-
-Per aggiungere cartelle Dedalus o altri applicativi: modifica `$FOLDERS_FULL` nella sezione CONFIGURAZIONE dello script.
-
----
-
-## Output
-
-Il backup viene salvato in una cartella nominata automaticamente:
-
-```
-<Destination>\m.rossi_2026-05-15_09-30_T10542\
-├── Desktop\
-├── Documents\
-├── ...
-└── _backup.log     <- da allegare al ticket SysAid
-```
-
----
-
-## GDPR
-
-Lo script chiede conferma esplicita prima di procedere.
-Verifica che Desktop e Documenti non contengano dati paziente prima di copiare.
-Elimina il backup dopo la migrazione se contiene informazioni sensibili.
-
----
-
-## Note tecniche
-
-- Usa `robocopy /Z` (modalita riavviabile) — il trasferimento riprende se la rete cade
-- Compatibile con reti WiFi lente e instabili tipiche di reparti e case di comunita
-- Non modifica la Execution Policy di sistema — lanciare con `-ExecutionPolicy Bypass`
-
-```powershell
-powershell.exe -ExecutionPolicy Bypass -File ".\Invoke-PDLBackup.ps1"
-```
-
----
-
-## Changelog
-
-### v1.1.0
-- Fix: variabili `$timestamp`, `$ticketPart`, `$backupRoot` spostate a inizio script (compatibilita `Set-StrictMode`)
-- Fix: `$errors` e `$skips` forzati ad array con `@()` per `.Count` su collezioni vuote
-- Rinominata variabile `$args` in `$roboArgs` (conflitto con variabile riservata PowerShell)
-
-### v1.0.0
-- Release iniziale
-
----
-
-## Autore
-
-**Antonio Barengo** — [github.com/Tohiko98](https://github.com/Tohiko98) · [LinkedIn](https://linkedin.com/in/antonio-barengo-b148a1303)
-
-Licenza: [MIT](LICENSE)
+powershell.exe -ExecutionPolicy Bypass -File ".\PDLPrinter.ps1"
