@@ -101,8 +101,8 @@ if ($null -ne $lastProfile) {
 Write-Header "RETE"
 
 $adapters = Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled }
-$currentGw = "10.3.10.1"
-$currentDns = "10.3.1.2"
+$currentGw = "$null"
+$currentDns = "$null"
 
 foreach ($adapter in $adapters) {
     $netAdapter = Get-CimInstance -ClassName Win32_NetworkAdapter | Where-Object { $_.DeviceID -eq $adapter.Index }
